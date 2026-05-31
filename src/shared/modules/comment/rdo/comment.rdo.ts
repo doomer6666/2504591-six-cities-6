@@ -1,15 +1,20 @@
-import { Expose } from 'class-transformer';
-
+import { Ref } from '@typegoose/typegoose';
+import { Expose, Type } from 'class-transformer';
+import { UserRdo, type UserEntity } from '../../user/index.js';
 export class CommentRdo {
   @Expose()
+  public id: string;
+
+  @Expose()
   public text: string;
+
+  @Expose()
+  public date: string;
 
   @Expose()
   public rating: number;
 
   @Expose()
-  public authorId: string;
-
-  @Expose()
-  public offerId: string;
+  @Type(() => UserRdo)
+  public user: Ref<UserEntity>;
 }

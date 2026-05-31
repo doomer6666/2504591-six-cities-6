@@ -1,3 +1,6 @@
+import { Ref } from '@typegoose/typegoose';
+import { UserEntity } from '../modules/user/user.entity.js';
+
 export const OfferCityEnum = {
   Paris: 'Paris',
   Cologne: 'Cologne',
@@ -42,6 +45,6 @@ export type Offer = {
   guests: number;
   price: number;
   features: OfferFeatureType[];
-  authorId: string;
+  user: Ref<UserEntity>;
   coordinates: [number, number];
 };

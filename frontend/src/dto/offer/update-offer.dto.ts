@@ -5,8 +5,6 @@ export default class UpdateOfferDto {
 
   public description?: string;
 
-  public date?: string;
-
   public city?: OfferCityType;
 
   public preview?: string;
@@ -14,8 +12,6 @@ export default class UpdateOfferDto {
   public images?: string[];
 
   public isPremium?: boolean;
-
-  public rating?: number;
 
   public type?: OfferType;
 
@@ -26,8 +22,6 @@ export default class UpdateOfferDto {
   public price?: number;
 
   public features?: OfferFeatureType[];
-
-  public authorId?: string;
 
   public coordinates?: number[];
 }

@@ -5,7 +5,7 @@ import { IOfferService } from './offer-service.interface.js';
 import { OfferEntity } from './offer.entity.js';
 import { CreateOfferDto } from './dto/create-offer.dto.js';
 import { ILogger } from '../../libs/logger/index.js';
-import { DeleteResult } from 'mongoose';
+import mongoose, { DeleteResult } from 'mongoose';
 import { CommentEntity } from '../comment/comment.entity.js';
 import { UserEntity } from '../user/user.entity.js';
 import { UpdateOfferDto } from './dto/update-offer.dto.js';
@@ -27,21 +27,26 @@ export class DefaultOfferService implements IOfferService {
   ) {}
 
   public async create(dto: CreateOfferDto): Promise<DocumentType<OfferEntity>> {
-    const result = await this.offerModel.create(dto);
+    const offer = await this.offerModel.create({
+      ...dto,
+      user: new mongoose.Types.ObjectId(dto.user),
+    });
+
     this.logger.info(`New offer created: ${dto.name}`);
-    return result;
+
+    return offer.populate('user');
   }
 
   public async findByOfferId(
     offerId: string
   ): Promise<DocumentType<OfferEntity> | null> {
-    return this.offerModel.findById(offerId).exec();
+    return this.offerModel.findById(offerId).populate('user').exec();
   }
 
   public async findByOfferName(
     offerName: string
   ): Promise<DocumentType<OfferEntity> | null> {
-    return this.offerModel.findOne({ name: offerName }).exec();
+    return this.offerModel.findOne({ name: offerName }).populate('user').exec();
   }
 
   public async findByOfferNameOrCreate(
@@ -61,6 +66,7 @@ export class DefaultOfferService implements IOfferService {
       .find({})
       .sort({ createdAt: SortType.Down })
       .limit(DEFAULT_OFFER_COUNT)
+      .populate('user')
       .exec();
   }
 
@@ -69,6 +75,7 @@ export class DefaultOfferService implements IOfferService {
       .find({ isPremium: true })
       .sort({ createdAt: SortType.Down })
       .limit(DEFAULT_OFFER_COUNT)
+      .populate('user')
       .exec();
   }
 
@@ -80,9 +87,12 @@ export class DefaultOfferService implements IOfferService {
     offerId: string,
     dto: UpdateOfferDto
   ): Promise<DocumentType<OfferEntity> | null> {
-    return this.offerModel.findOneAndUpdate({ _id: offerId }, dto, {
-      new: true,
-    });
+    return this.offerModel
+      .findOneAndUpdate({ _id: offerId }, dto, {
+        new: true,
+      })
+      .populate('user')
+      .exec();
   }
 
   public async findPremiumByCity(
@@ -92,6 +102,7 @@ export class DefaultOfferService implements IOfferService {
       .find({ city: city, isPremium: true })
       .sort({ createdAt: SortType.Down })
       .limit(DEFAULT_PREMIUM_OFFER_COUNT)
+      .populate('user')
       .exec();
   }
 
@@ -102,24 +113,23 @@ export class DefaultOfferService implements IOfferService {
   }
 
   public async recalculateRating(offerId: string): Promise<void> {
-    const avgRatingResult = await this.commentModel
+    const match: Record<string, unknown>[] = [{ offerId }];
+
+    if (mongoose.Types.ObjectId.isValid(offerId)) {
+      match.push({ offerId: new mongoose.Types.ObjectId(offerId) });
+    }
+
+    const result = await this.commentModel
       .aggregate([
-        {
-          $match: {
-            offerId: offerId,
-          },
-        },
-        {
-          $group: {
-            _id: '$offerId',
-            avgRating: { $avg: '$rating' },
-          },
-        },
+        { $match: { $or: match } },
+        { $group: { _id: '$offerId', avgRating: { $avg: '$rating' } } },
       ])
       .exec();
-    const avgRating =
-      avgRatingResult.length > 0 ? avgRatingResult[0].avgRating : 0;
-    await this.offerModel.findByIdAndUpdate(offerId, { rating: avgRating });
+
+    const avgRating = result.length > 0 ? result[0].avgRating : 0;
+    const rating = Math.round(avgRating * 10) / 10;
+
+    await this.offerModel.findByIdAndUpdate(offerId, { rating });
   }
 
   public async exists(documentId: string): Promise<boolean> {
@@ -131,6 +141,7 @@ export class DefaultOfferService implements IOfferService {
   ): Promise<DocumentType<OfferEntity>[]> {
     const offers = await this.offerModel
       .find({ favoriteByUsers: userId })
+      .populate('user')
       .exec();
     return offers;
   }

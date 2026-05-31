@@ -8,7 +8,9 @@ export const CITIES = [
   'Hamburg',
   'Dusseldorf',
 ];
+
 export const TYPES = ['apartment', 'room', 'house', 'hotel'] as const;
+
 export const GOODS = [
   'Breakfast',
   'Air conditioning',
@@ -30,6 +32,7 @@ export const MAX_COMMENTS = 10;
 export const MIN_COMMENT_LENGTH = 50;
 export const MAX_COMMENT_LENGTH = 300;
 
+export const DEFAULT_AVATAR = 'img/avatar.svg';
 
 export enum AppRoute {
   Root = '/',
@@ -43,14 +46,15 @@ export enum AppRoute {
 }
 
 export enum ApiRoute {
-  Offers = '/hotels',
-  Login = '/login',
-  Logout = '/logout',
-  Register = '/register',
+  Offers = '/offers',
+  Premium = '/offers/premium',
+  Favorite = '/offers/me/favorites',
+  Comments = '/offers',
+  Users = '/users',
+  Register = '/users/register',
+  Login = '/users/login',
+  Logout = '/users/logout',
   Avatar = '/avatar',
-  Comments = '/comments',
-  Favorite = '/favorite',
-  Premium = '/premium',
 }
 
 export enum AuthorizationStatus {
@@ -73,8 +77,12 @@ export enum StoreSlice {
 }
 
 export enum HttpCode {
+  Ok = 200,
+  Created = 201,
+  BadRequest = 400,
   NotFound = 404,
   NoAuth = 401,
+  Conflict = 409,
 }
 
 export enum SubmitStatus {
@@ -94,28 +102,10 @@ export const Comparator: {
 };
 
 export const CityLocation: { [key in CityName]: Location } = {
-  Paris: {
-    latitude: 48.85661,
-    longitude: 2.351499,
-  },
-  Cologne: {
-    latitude: 50.938361,
-    longitude: 6.959974,
-  },
-  Brussels: {
-    latitude: 50.846557,
-    longitude: 4.351697,
-  },
-  Amsterdam: {
-    latitude: 52.37454,
-    longitude: 4.897976,
-  },
-  Hamburg: {
-    latitude: 53.550341,
-    longitude: 10.000654,
-  },
-  Dusseldorf: {
-    latitude: 51.225402,
-    longitude: 6.776314,
-  },
+  Paris: { latitude: 48.85661, longitude: 2.351499 },
+  Cologne: { latitude: 50.938361, longitude: 6.959974 },
+  Brussels: { latitude: 50.846557, longitude: 4.351697 },
+  Amsterdam: { latitude: 52.370216, longitude: 4.895168 },
+  Hamburg: { latitude: 53.550341, longitude: 10.000654 },
+  Dusseldorf: { latitude: 51.225402, longitude: 6.776314 },
 };

@@ -1,7 +1,7 @@
 import { CITIES, Sorting, TYPES } from '../const';
 
-export type CityName = typeof CITIES[number];
-export type Type = typeof TYPES[number];
+export type CityName = (typeof CITIES)[number];
+export type Type = (typeof TYPES)[number];
 export type SortName = keyof typeof Sorting;
 
 export type Location = {

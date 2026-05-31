@@ -31,13 +31,14 @@ export class PathTransformer {
   }
 
   public execute(data: Record<string, unknown>): Record<string, unknown> {
-    const stack = [data];
+    const stack: unknown[] = [data];
+
     while (stack.length > 0) {
       const current = stack.pop();
 
-      for (const key in current) {
-        if (Object.hasOwn(current, key)) {
-          const value = current[key];
+      for (const key in current as Record<string, unknown>) {
+        if (Object.hasOwn(current as object, key)) {
+          const value = (current as Record<string, unknown>)[key];
 
           if (isObject(value)) {
             stack.push(value);
@@ -45,21 +46,26 @@ export class PathTransformer {
           }
 
           if (this.isStaticProperty(key) && typeof value === 'string') {
-            const staticPath = STATIC_FILES_ROUTE;
-            const uploadPath = STATIC_UPLOAD_ROUTE;
-            const serverHost = this.config.get('HOST');
-            const serverPort = this.config.get('PORT');
+            (current as Record<string, unknown>)[key] = this.buildUrl(value);
+            continue;
+          }
 
-            const rootPath = this.hasDefaultImage(value)
-              ? staticPath
-              : uploadPath;
-            current[key] =
-              `${getFullServerPath(serverHost, serverPort)}${rootPath}/${value}`;
+          if (this.isStaticProperty(key) && Array.isArray(value)) {
+            (current as Record<string, unknown>)[key] = value.map((item) =>
+              typeof item === 'string' ? this.buildUrl(item) : item
+            );
           }
         }
       }
     }
 
     return data;
+  }
+
+  private buildUrl(value: string): string {
+    const rootPath = this.hasDefaultImage(value)
+      ? STATIC_FILES_ROUTE
+      : STATIC_UPLOAD_ROUTE;
+    return `${getFullServerPath(this.config.get('HOST'), this.config.get('PORT'))}${rootPath}/${value}`;
   }
 }

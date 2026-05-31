@@ -1,11 +1,13 @@
-export default class CreateCommentDto {
+import UserDto from '../user/user.dto';
+
+export default class CommentDto {
   public id!: string;
 
   public text!: string;
 
+  public date!: string;
+
   public rating!: number;
 
-  public authorId!: string;
-
-  public offerId!: string;
+  public user!: UserDto;
 }

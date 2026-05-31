@@ -48,9 +48,10 @@ export abstract class BaseController implements IController {
   }
 
   public send<T>(res: Response, statusCode: number, data: T): void {
-    if (!isRecord(data)) {
+    if (!isRecord(data) && !Array.isArray(data)) {
       throw new Error('Incorrect form data');
     }
+
     res.type(DEFAULT_CONTENT_TYPE).status(statusCode).json(data);
   }
 

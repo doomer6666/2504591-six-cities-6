@@ -4,6 +4,8 @@ import {
   DocumentExistsMiddleware,
   HttpError,
   HttpMethod,
+  PathTransformer,
+  PathTransformerMiddleware,
   PrivateRouteMiddleware,
   RequestBody,
   RequestParams,
@@ -22,14 +24,21 @@ import { StatusCodes } from 'http-status-codes';
 
 @injectable()
 export class CommentController extends BaseController {
+  private readonly pathTransformerMiddleware: PathTransformerMiddleware;
+
   constructor(
     @inject(Component.Logger) protected readonly logger: ILogger,
     @inject(Component.CommentService)
     private readonly commentService: ICommentService,
     @inject(Component.OfferService)
-    protected readonly offerService: IOfferService
+    protected readonly offerService: IOfferService,
+    @inject(Component.PathTransformer) pathTransformer: PathTransformer
   ) {
     super(logger);
+
+    this.pathTransformerMiddleware = new PathTransformerMiddleware(
+      pathTransformer
+    );
 
     this.addRoute({
       path: '/:offerId/comments',
@@ -38,6 +47,7 @@ export class CommentController extends BaseController {
       middlewares: [
         new ValidateObjectIdMiddleware('offerId'),
         new DocumentExistsMiddleware(offerService, 'Offer', 'offerId'),
+        this.pathTransformerMiddleware,
       ],
     });
 
@@ -50,6 +60,7 @@ export class CommentController extends BaseController {
         new ValidateObjectIdMiddleware('offerId'),
         new ValidateDtoMiddleware(CreateCommentDto),
         new DocumentExistsMiddleware(offerService, 'Offer', 'offerId'),
+        this.pathTransformerMiddleware,
       ],
     });
   }
@@ -62,25 +73,32 @@ export class CommentController extends BaseController {
 
   public async create(
     {
+      params,
       body,
       tokenPayload,
     }: Request<RequestParams, RequestBody, CreateCommentDto>,
     res: Response
   ) {
-    if (!(await this.offerService.exists(body.offerId))) {
+    const offerId = getId(params);
+    this.logger.info(
+      `Creating comment for offer ${offerId} by user ${tokenPayload.email}`
+    );
+    if (!(await this.offerService.exists(offerId))) {
       throw new HttpError(
         StatusCodes.NOT_FOUND,
-        `Offer with id ${body.offerId} not found.`,
+        `Offer with id ${offerId} not found.`,
         'CommentController'
       );
     }
 
     const comment = await this.commentService.create({
       ...body,
-      authorId: tokenPayload.id,
+      offerId,
+      user: tokenPayload.id,
     });
 
-    await this.offerService.incCommentCount(body.offerId);
+    await this.offerService.incCommentCount(offerId);
+    await this.offerService.recalculateRating(offerId);
     this.created(res, fillDTO(CommentRdo, comment));
   }
 }

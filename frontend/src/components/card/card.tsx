@@ -30,7 +30,6 @@ const Card = ({
   const handleMouseEnter = () => {
     onMouseEnter(id);
   };
-
   return (
     <article
       className={`${classPrefix}__card place-card`}
@@ -42,7 +41,9 @@ const Card = ({
           <span>Premium</span>
         </div>
       )}
-      <div className={`${classPrefix}__image-wrapper place-card__image-wrapper`}>
+      <div
+        className={`${classPrefix}__image-wrapper place-card__image-wrapper`}
+      >
         <Link to={`${AppRoute.Property}/${id}`}>
           <img
             className="place-card__image"
@@ -67,8 +68,7 @@ const Card = ({
               style={{
                 width: getStarsWidth(rating),
               }}
-            >
-            </span>
+            ></span>
             <span className="visually-hidden">Rating</span>
           </div>
         </div>
@@ -81,4 +81,7 @@ const Card = ({
   );
 };
 
-export default memo(Card, (prevProps, nextProps) => prevProps.isFavorite === nextProps.isFavorite);
+export default memo(
+  Card,
+  (prevProps, nextProps) => prevProps.isFavorite === nextProps.isFavorite
+);

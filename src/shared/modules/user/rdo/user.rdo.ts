@@ -7,11 +7,8 @@ export class UserRdo {
   @Expose()
   public name: string;
 
-  @Expose()
+  @Expose({ name: 'avatar' })
   public avatarUrl: string;
-
-  @Expose()
-  public password: string;
 
   @Expose()
   public type: string;

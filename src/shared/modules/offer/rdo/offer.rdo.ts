@@ -1,11 +1,19 @@
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import { OfferCityType, OfferFeatureType } from '../../../types/index.js';
+import { UserRdo } from '../../user/rdo/user.rdo.js';
+
 export class OfferRdo {
   @Expose()
   public id: string;
 
   @Expose()
   public name: string;
+
+  @Expose()
+  public description: string;
+
+  @Expose()
+  public date: string;
 
   @Expose()
   public city: OfferCityType;
@@ -41,7 +49,8 @@ export class OfferRdo {
   public features: OfferFeatureType[];
 
   @Expose()
-  public authorId: string;
+  @Type(() => UserRdo)
+  public user: UserRdo;
 
   @Expose()
   public coordinates: number[];

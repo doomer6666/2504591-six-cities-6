@@ -2,7 +2,9 @@ import {
   defaultClasses,
   getModelForClass,
   modelOptions,
+  mongoose,
   prop,
+  Ref,
 } from '@typegoose/typegoose';
 import {
   Offer,
@@ -13,6 +15,7 @@ import {
   OfferType,
   OfferTypeEnum,
 } from '../../types/index.js';
+import type { UserEntity } from '../user/user.entity.js';
 
 export interface OfferEntity extends defaultClasses.Base {}
 
@@ -46,7 +49,7 @@ export class OfferEntity extends defaultClasses.TimeStamps implements Offer {
   @prop({ required: true, type: () => String, enum: OfferCityEnum })
   city: OfferCityType;
 
-  @prop({ required: true, default: '', type: () => String })
+  @prop({ required: true, default: 'default-photo.jpg', type: () => String })
   preview: string;
 
   @prop({ required: true, type: () => [String], default: [] })
@@ -55,7 +58,7 @@ export class OfferEntity extends defaultClasses.TimeStamps implements Offer {
   @prop({ required: true, default: false, type: () => Boolean })
   isPremium: boolean;
 
-  @prop({ required: true, default: 1, type: () => Number })
+  @prop({ required: true, default: 0, type: () => Number })
   rating: number;
 
   @prop({ required: true, type: () => String, enum: OfferTypeEnum })
@@ -67,18 +70,18 @@ export class OfferEntity extends defaultClasses.TimeStamps implements Offer {
   @prop({ required: true, default: 1, type: () => Number })
   guests: number;
 
-  @prop({
-    required: true,
-    default: 0,
-    type: () => Number,
-  })
+  @prop({ required: true, default: 0, type: () => Number })
   price: number;
 
   @prop({ required: true, type: () => [String], enum: OfferFeatureEnum })
   features: OfferFeatureType[];
 
-  @prop({ required: true, type: () => String })
-  authorId: string;
+  @prop({
+    required: true,
+    ref: 'UserEntity',
+    type: () => mongoose.Schema.Types.ObjectId,
+  })
+  user: Ref<UserEntity>;
 
   @prop({ required: true, type: () => [Number], default: [0, 0] })
   coordinates: [number, number];

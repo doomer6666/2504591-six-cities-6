@@ -1,12 +1,11 @@
 import { IUserService } from './user-service.interface.js';
-import { DocumentType, Ref, types } from '@typegoose/typegoose';
+import { DocumentType, types } from '@typegoose/typegoose';
 import { UserEntity } from './user.entity.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { inject, injectable } from 'inversify';
 import { Component } from '../../types/component.enum.js';
 import { ILogger } from '../../libs/logger/index.js';
 import { OfferEntity } from '../offer/offer.entity.js';
-import { DEFAULT_AVATAR_FILE_NAME } from './user.constant.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 
 @injectable()
@@ -30,7 +29,7 @@ export class DefaultUserService implements IUserService {
     dto: CreateUserDto,
     salt: string
   ): Promise<DocumentType<UserEntity>> {
-    const user = new UserEntity({ ...dto, avatar: DEFAULT_AVATAR_FILE_NAME });
+    const user = new UserEntity({ ...dto });
     user.setPassword(dto.password, salt);
 
     const res = this.userModel.create(user);
@@ -63,21 +62,32 @@ export class DefaultUserService implements IUserService {
     });
   }
 
-  public async getFavorites(userId: string): Promise<Ref<OfferEntity>[]> {
-    const existedUser = await this.findOneById(userId);
-    if (existedUser) {
-      await existedUser.populate('favorites');
+  public async getFavorites(
+    userId: string
+  ): Promise<DocumentType<OfferEntity>[]> {
+    const user = await this.userModel
+      .findById(userId)
+      .populate<{ favorites: DocumentType<OfferEntity>[] }>({
+        path: 'favorites',
+        populate: { path: 'user' },
+      })
+      .exec();
+
+    if (!user) {
+      return [];
     }
-    return existedUser?.favorites || [];
+
+    return user.favorites;
   }
 
   public async getFavoriteIds(userId: string): Promise<string[]> {
-    const user = await this.findOneById(userId);
-    if (!user || !user.favorites) {
+    const user = await this.userModel.findById(userId).exec();
+
+    if (!user) {
       return [];
     }
-    this.logger.info(user.favorites.toString());
-    return [...user.favorites].map((favorite) => favorite.toString());
+
+    return user.favorites.map((id) => id.toString());
   }
 
   public async deleteFavorite(userId: string, offerId: string): Promise<void> {

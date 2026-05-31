@@ -9,7 +9,10 @@ import Map from '../map/map';
 import SortingList from '../sorting-list/sorting-list';
 import Spinner from '../spinner/spinner';
 import { getCity, getSorting } from '../../store/site-process/selectors';
-import { getIsOffersLoading, selectOffers } from '../../store/site-data/selectors';
+import {
+  getIsOffersLoading,
+  selectOffers,
+} from '../../store/site-data/selectors';
 import CardListEmpty from '../card-list-empty/card-list-empty';
 
 const CardList = (): JSX.Element => {
@@ -39,12 +42,21 @@ const CardList = (): JSX.Element => {
   }
 
   return (
-    <div className={`cities__places-container container${isEmpty ? ' cities__places-container page__main--index-empty' : ''}`}>
-      {isEmpty ? <CardListEmpty city={activeCity.name} /> : (
+    <div
+      className={`cities__places-container container${isEmpty ? ' cities__places-container page__main--index-empty' : ''}`}
+    >
+      {isEmpty ? (
+        <CardListEmpty city={activeCity.name} />
+      ) : (
         <section className="cities__places places">
           <h2 className="visually-hidden">Places</h2>
-          <b className="places__found">{offers.length} places to stay in {activeCity.name}</b>
-          <SortingList onChange={onSortingChange} activeSorting={activeSorting} />
+          <b className="places__found">
+            {offers.length} places to stay in {activeCity.name}
+          </b>
+          <SortingList
+            onChange={onSortingChange}
+            activeSorting={activeSorting}
+          />
           <div className="cities__places-list places__list tabs__content">
             {offers.map((offer) => (
               <Card
@@ -55,9 +67,16 @@ const CardList = (): JSX.Element => {
               />
             ))}
           </div>
-        </section>)}
+        </section>
+      )}
       <div className="cities__right-section">
-        {!isEmpty && <Map locations={offers.map(({ id, location }) => ({ id, ...location }))} city={activeCity} activeOffer={activeOffer} />}
+        {!isEmpty && (
+          <Map
+            locations={offers.map(({ id, location }) => ({ id, ...location }))}
+            city={activeCity}
+            activeOffer={activeOffer}
+          />
+        )}
       </div>
     </div>
   );

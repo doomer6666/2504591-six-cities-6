@@ -13,10 +13,19 @@ export class PathTransformerMiddleware implements IMiddleware {
   ): Promise<void> {
     const originalJson = res.json.bind(res);
     const transformer = this.pathTransformer;
+
     res.json = function (data: unknown) {
+      if (Array.isArray(data)) {
+        const transformed = data.map((item) =>
+          isObject(item) ? transformer.execute(item) : item
+        );
+        return originalJson(transformed);
+      }
+
       if (isObject(data)) {
         return originalJson(transformer.execute(data));
       }
+
       return originalJson(data);
     };
 

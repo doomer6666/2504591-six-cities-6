@@ -7,7 +7,11 @@ export default class CreateOfferDto {
 
   public city!: OfferCityType;
 
-  public rating!: number;
+  public preview!: string;
+
+  public images!: string[];
+
+  public isPremium!: boolean;
 
   public type!: OfferType;
 
@@ -18,8 +22,6 @@ export default class CreateOfferDto {
   public price!: number;
 
   public features!: OfferFeatureType[];
-
-  public authorId!: string;
 
   public coordinates!: number[];
 }

@@ -16,4 +16,6 @@ export class CreateUserDto {
 
   @IsEnum(UserTypeEnum, { message: CreateUserMessages.type.invalidFormat })
   public type: UserType;
+
+  public avatar!: string;
 }

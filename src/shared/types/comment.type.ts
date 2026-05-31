@@ -1,6 +1,10 @@
+import { Ref } from '@typegoose/typegoose';
+import type { UserEntity } from '../modules/user/index.js';
+
 export type CommentType = {
   text: string;
   date: Date;
   rating: number;
-  authorId: string;
+  user: Ref<UserEntity>;
+  offerId: string;
 };

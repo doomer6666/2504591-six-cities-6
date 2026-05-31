@@ -4,7 +4,7 @@ import { Component } from '../../types/index.js';
 import { ICommentService } from './comment-service.interface.js';
 import { CommentEntity } from './comment.entity.js';
 import { CreateCommentDto } from './dto/create-comment.dto.js';
-import { DocumentType, types } from '@typegoose/typegoose';
+import { DocumentType, mongoose, types } from '@typegoose/typegoose';
 
 const DEFAULT_COMMENT_LIMIT = 50;
 
@@ -16,7 +16,10 @@ export class DefaultCommentService implements ICommentService {
   ) {}
 
   create(dto: CreateCommentDto): Promise<DocumentType<CommentEntity>> {
-    const result = this.commentModel.create(dto);
+    const result = this.commentModel.create({
+      ...dto,
+      user: new mongoose.Types.ObjectId(dto.user),
+    });
     this.logger.info(`New comment created: ${dto.text}`);
     return result;
   }
@@ -27,6 +30,7 @@ export class DefaultCommentService implements ICommentService {
       .find({ offerId })
       .sort({ createdAt: -1 })
       .limit(DEFAULT_COMMENT_LIMIT)
+      .populate('user')
       .exec();
 
     this.logger.info(`Find comments: ${comments.join()}`);

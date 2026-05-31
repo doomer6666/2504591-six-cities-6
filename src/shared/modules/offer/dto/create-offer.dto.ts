@@ -3,7 +3,6 @@ import {
   ArrayMinSize,
   IsArray,
   IsBoolean,
-  IsDateString,
   IsEnum,
   IsInt,
   IsString,
@@ -37,22 +36,11 @@ export class CreateOfferDto {
   @IsString()
   public description: string;
 
-  @IsDateString(
-    {},
-    { message: CreateOfferValidationMessage.date.invalidFormat }
-  )
-  public date: string;
-
   @IsEnum(OfferCityEnum, { message: 'City must be valid' })
   public city: OfferCityType;
 
   @IsBoolean()
   public isPremium: boolean;
-
-  @IsInt()
-  @Min(1)
-  @Max(5)
-  public rating: number;
 
   @IsEnum(OfferTypeEnum, { message: CreateOfferValidationMessage.type.invalid })
   public type: OfferType;
@@ -79,7 +67,7 @@ export class CreateOfferDto {
   })
   public features: OfferFeatureType[];
 
-  public authorId: string;
+  public user: string;
 
   @IsArray({ message: CreateOfferValidationMessage.coordinates.invalidFormat })
   @ArrayMinSize(2, {

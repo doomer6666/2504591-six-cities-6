@@ -25,6 +25,7 @@ import { LoginUserDto } from './dto/login-user.dto.js';
 import { IAuthService } from '../auth/index.js';
 import { LoggedUserRdo } from './rdo/logged-user.rdo.js';
 import { UploadUserAvatarRdo } from './rdo/upload-user-avatar.rdo.js';
+import { DEFAULT_AVATAR_FILE_NAME } from './user.constant.js';
 
 @injectable()
 export class UserController extends BaseController {
@@ -41,7 +42,10 @@ export class UserController extends BaseController {
       path: '/register',
       method: HttpMethod.Post,
       handler: this.create,
-      middlewares: [new ValidateDtoMiddleware(CreateUserDto)],
+      middlewares: [
+        new UploadFileMiddleware(this.config.get('UPLOAD_DIRECTORY'), 'avatar'),
+        new ValidateDtoMiddleware(CreateUserDto),
+      ],
     });
     this.addRoute({
       path: '/login',
@@ -57,7 +61,7 @@ export class UserController extends BaseController {
 
     this.addRoute({
       path: '/logout',
-      method: HttpMethod.Post,
+      method: HttpMethod.Delete,
       handler: this.logout,
       middlewares: [new PrivateRouteMiddleware()],
     });
@@ -82,7 +86,7 @@ export class UserController extends BaseController {
   }
 
   public async create(
-    { body }: CreateUserRequest,
+    { file, body }: CreateUserRequest,
     res: Response
   ): Promise<void> {
     const existUser = await this.userService.findByEmail(body.email);
@@ -95,15 +99,24 @@ export class UserController extends BaseController {
       );
     }
 
-    const result = await this.userService.create(body, this.config.get('SALT'));
+    const avatar = file?.filename ?? DEFAULT_AVATAR_FILE_NAME;
+    const result = await this.userService.create(
+      { ...body, avatar },
+      this.config.get('SALT')
+    );
     this.created(res, fillDTO(UserRdo, result));
   }
 
-  public async checkAuthenticate(
-    { tokenPayload: { email } }: Request,
-    res: Response
-  ) {
-    const foundedUser = await this.userService.findByEmail(email);
+  public async checkAuthenticate({ tokenPayload }: Request, res: Response) {
+    if (!tokenPayload) {
+      throw new HttpError(
+        StatusCodes.UNAUTHORIZED,
+        'Unauthorized',
+        'UserController'
+      );
+    }
+
+    const foundedUser = await this.userService.findByEmail(tokenPayload.email);
 
     if (!foundedUser) {
       throw new HttpError(

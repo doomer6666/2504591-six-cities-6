@@ -2,9 +2,12 @@ import {
   defaultClasses,
   getModelForClass,
   modelOptions,
+  mongoose,
   prop,
+  Ref,
 } from '@typegoose/typegoose';
 import { CommentType } from '../../types/index.js';
+import type { UserEntity } from '../user/user.entity.js';
 
 export interface CommentEntity extends defaultClasses.Base {}
 
@@ -42,8 +45,12 @@ export class CommentEntity
   })
   rating: number;
 
-  @prop({ required: true, type: () => String })
-  authorId: string;
+  @prop({
+    required: true,
+    ref: 'UserEntity',
+    type: () => mongoose.Schema.Types.ObjectId,
+  })
+  user: Ref<UserEntity>;
 
   @prop({ required: true, type: () => String })
   offerId: string;

@@ -54,6 +54,23 @@ export class OfferController extends BaseController {
     });
 
     this.addRoute({
+      path: '/premium',
+      method: HttpMethod.Get,
+      handler: this.getPremium,
+      middlewares: [this.pathTransformerMiddleware],
+    });
+
+    this.addRoute({
+      path: '/me/favorites',
+      method: HttpMethod.Get,
+      handler: this.favorites,
+      middlewares: [
+        new PrivateRouteMiddleware(),
+        this.pathTransformerMiddleware,
+      ],
+    });
+
+    this.addRoute({
       path: '/',
       method: HttpMethod.Post,
       handler: this.create,
@@ -112,17 +129,6 @@ export class OfferController extends BaseController {
     });
 
     this.addRoute({
-      path: '/premium',
-      method: HttpMethod.Get,
-      handler: this.getPremium,
-    });
-    this.addRoute({
-      path: '/me/favorites',
-      method: HttpMethod.Get,
-      handler: this.favorites,
-      middlewares: [new PrivateRouteMiddleware()],
-    });
-    this.addRoute({
       path: '/:offerId/preview',
       method: HttpMethod.Post,
       handler: this.uploadPreview,
@@ -136,6 +142,7 @@ export class OfferController extends BaseController {
         ),
       ],
     });
+
     this.addRoute({
       path: '/:offerId/images',
       method: HttpMethod.Post,
@@ -161,7 +168,7 @@ export class OfferController extends BaseController {
     }
 
     const offerWithFavotiresFlag = offers.map((offer) => {
-      const offerObject = offer.toObject();
+      const offerObject = offer.toObject({ virtuals: true });
       return {
         ...offerObject,
         isFavorite: favoriteIds.includes(offerObject._id.toString()),
@@ -187,7 +194,7 @@ export class OfferController extends BaseController {
 
     const result = await this.offerService.create({
       ...body,
-      authorId: tokenPayload.id,
+      user: tokenPayload.id,
     });
     this.created(res, fillDTO(OfferRdo, result));
   }
@@ -240,8 +247,13 @@ export class OfferController extends BaseController {
     { tokenPayload }: Request,
     res: Response
   ): Promise<void> {
-    const result = await this.userService.getFavorites(tokenPayload.id);
-    this.ok(res, result);
+    const offers = await this.userService.getFavorites(tokenPayload.id);
+
+    const offersWithFlag = offers.map((offer) => {
+      const offerObject = offer.toObject({ virtuals: true });
+      return { ...offerObject, isFavorite: true };
+    });
+    this.ok(res, fillDTO(OfferRdo, offersWithFlag));
   }
 
   public async uploadPreview({ params, file }: Request, res: Response) {
@@ -264,6 +276,7 @@ export class OfferController extends BaseController {
 
   public async uploadImages({ params, files }: Request, res: Response) {
     const uploadedFiles = files as Express.Multer.File[];
+
     if (
       !uploadedFiles ||
       uploadedFiles.length === 0 ||
@@ -276,35 +289,18 @@ export class OfferController extends BaseController {
       );
     }
 
-    const offer = await this.offerService.findByOfferId(params.offerId);
-
-    if (!offer) {
-      throw new HttpError(
-        StatusCodes.NOT_FOUND,
-        `Offer ${params.offerId} not found`,
-        'OfferController'
-      );
-    }
-
-    const currentImagesCount = offer.images.length;
-    const newImagesCount = uploadedFiles.length;
-
-    if (currentImagesCount + newImagesCount > 6) {
+    if (uploadedFiles.length > 6) {
       throw new HttpError(
         StatusCodes.BAD_REQUEST,
-        `Cannot upload ${newImagesCount} images. Current: ${currentImagesCount}, max: 6`,
+        `Cannot upload ${uploadedFiles.length} images, max: 6`,
         'OfferController'
       );
     }
 
-    const newImageFilenames = uploadedFiles.map((file) => file.filename);
-    const updatedImages = [...offer.images, ...newImageFilenames];
-
-    const updateDto = { images: updatedImages };
-    const result = await this.offerService.updateById(
-      params.offerId,
-      updateDto
-    );
+    const images = uploadedFiles.map((file) => file.filename);
+    const result = await this.offerService.updateById(params.offerId, {
+      images,
+    });
 
     this.created(res, fillDTO(OfferRdo, result));
   }
