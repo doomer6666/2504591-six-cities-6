@@ -1,4 +1,5 @@
 import { OfferCityType, OfferFeatureType, OfferType } from './offer.type.js';
+import { UserType } from './user.type.js';
 
 export type MockServerData = {
   titles: string[];
@@ -9,9 +10,10 @@ export type MockServerData = {
   types: OfferType[];
   features: OfferFeatureType[];
   users: {
-    username: string;
+    name: string;
     email: string;
     avatar: string;
     password: string;
+    type: UserType;
   }[];
 };

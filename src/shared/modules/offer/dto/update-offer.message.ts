@@ -46,7 +46,7 @@ export const UpdateOfferMessages = {
   price: {
     invalidFormat: 'price must be an integer',
     min: 'Minimum price is 100',
-    max: 'Maximum price is 200000',
+    max: 'Maximum price is 100000',
   },
   features: {
     invalidFormat: 'features must be an array',

@@ -25,6 +25,7 @@ import { UserType, UserTypeEnum } from '../../shared/types/user.type.js';
 
 const isUserType = (type: string): type is UserType =>
   type === UserTypeEnum.Standart || type === UserTypeEnum.Pro;
+
 export class ImportCommand implements ICommand {
   private offerService: IOfferService;
   private databaseClient: IDatabaseClient;
@@ -37,8 +38,7 @@ export class ImportCommand implements ICommand {
     this.offerService = new DefaultOfferService(
       this.logger,
       OfferModel,
-      CommentModel,
-      UserModel
+      CommentModel
     );
     this.databaseClient = new MongoDatabaseClient(this.logger);
     this.userService = new DefaultUserService(this.logger, UserModel);
@@ -53,6 +53,7 @@ export class ImportCommand implements ICommand {
     if (!isUserType(user.type)) {
       return;
     }
+
     const existingUser = await this.userService.findByEmail(user.email);
     const dbUser =
       existingUser ??
@@ -66,23 +67,24 @@ export class ImportCommand implements ICommand {
         },
         this.salt
       ));
-    await this.offerService.create({
+
+    const created = await this.offerService.create({
       name: offer.name,
       description: offer.description,
-      date: offer.date.toISOString(),
       city: offer.city,
-      preview: offer.preview,
-      images: offer.images,
       isPremium: offer.isPremium,
-      // isFavorite: false,
-      rating: offer.rating,
       type: offer.type,
       rooms: offer.rooms,
       guests: offer.guests,
       price: offer.price,
       features: offer.features,
-      authorId: dbUser.id,
+      user: dbUser.id,
       coordinates: offer.coordinates,
+    });
+
+    await this.offerService.updateById(created.id, {
+      preview: offer.preview,
+      images: offer.images,
     });
   }
 
@@ -91,7 +93,7 @@ export class ImportCommand implements ICommand {
       const parsed = createOffer(line);
       await this.saveOffer(parsed);
     } catch (err) {
-      console.error(`Import failed on line: ${line}`, err);
+      console.error(chalk.red(`Import failed on line: ${line}`), err);
     }
   }
 

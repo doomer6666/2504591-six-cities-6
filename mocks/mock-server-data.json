@@ -2,7 +2,7 @@
   "api": {
     "titles": [
       "Epstein Island.",
-      "Beautiful & luxurious studio at great location",
+      "Beautiful luxurious studio at great location",
       "Wood and stone place",
       "Canal View Prinsengracht",
       "Nice, cozy, warm big bed apartment"
@@ -20,18 +20,8 @@
       "Hamburg",
       "Dusseldorf"
     ],
-    "previewImages": [
-      "img/apartment-01.jpg",
-      "img/apartment-02.jpg",
-      "img/apartment-03.jpg"
-    ],
-    "photos": [
-      "img/room.jpg",
-      "img/apartment-01.jpg",
-      "img/apartment-02.jpg",
-      "img/apartment-03.jpg",
-      "img/studio-01.jpg"
-    ],
+    "previewImages": ["default-photo.jpg"],
+    "photos": ["default-photo.jpg"],
     "types": ["Apartment", "Room", "House", "Hotel"],
     "features": [
       "Breakfast",
@@ -46,14 +36,14 @@
       {
         "name": "Ivan",
         "email": "ivan@example.com",
-        "avatar": "img/avatar-max.jpg",
+        "avatar": "default-avatar.jpg",
         "password": "secret_password",
         "type": "Standart"
       },
       {
         "name": "Angelina",
         "email": "angelina@example.com",
-        "avatar": "img/avatar-angelina.jpg",
+        "avatar": "default-avatar.jpg",
         "password": "secret_password",
         "type": "Pro"
       }

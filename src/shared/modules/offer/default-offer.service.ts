@@ -1,29 +1,28 @@
 import { DocumentType, types } from '@typegoose/typegoose';
-import { inject } from 'inversify';
+import { inject, injectable } from 'inversify';
+import mongoose, { DeleteResult } from 'mongoose';
 import { Component } from '../../types/index.js';
+import { SortType } from '../../types/index.js';
+import { ILogger } from '../../libs/logger/index.js';
 import { IOfferService } from './offer-service.interface.js';
 import { OfferEntity } from './offer.entity.js';
-import { CreateOfferDto } from './dto/create-offer.dto.js';
-import { ILogger } from '../../libs/logger/index.js';
-import mongoose, { DeleteResult } from 'mongoose';
 import { CommentEntity } from '../comment/comment.entity.js';
-import { UserEntity } from '../user/user.entity.js';
+import { CreateOfferDto } from './dto/create-offer.dto.js';
 import { UpdateOfferDto } from './dto/update-offer.dto.js';
-import { SortType } from '../../types/index.js';
 import {
   DEFAULT_OFFER_COUNT,
   DEFAULT_PREMIUM_OFFER_COUNT,
+  RATING_FRACTION_MULTIPLIER,
 } from './offer.constant.js';
 
+@injectable()
 export class DefaultOfferService implements IOfferService {
   constructor(
     @inject(Component.Logger) private readonly logger: ILogger,
     @inject(Component.OfferModel)
     private readonly offerModel: types.ModelType<OfferEntity>,
     @inject(Component.CommentModel)
-    private readonly commentModel: types.ModelType<CommentEntity>,
-    @inject(Component.UserModel)
-    private readonly userModel: types.ModelType<UserEntity>
+    private readonly commentModel: types.ModelType<CommentEntity>
   ) {}
 
   public async create(dto: CreateOfferDto): Promise<DocumentType<OfferEntity>> {
@@ -49,37 +48,19 @@ export class DefaultOfferService implements IOfferService {
     return this.offerModel.findOne({ name: offerName }).populate('user').exec();
   }
 
-  public async findByOfferNameOrCreate(
-    offerName: string,
-    dto: CreateOfferDto
-  ): Promise<DocumentType<OfferEntity>> {
-    const existedOffer = await this.findByOfferName(offerName);
+  public async find(count?: number): Promise<DocumentType<OfferEntity>[]> {
+    const limit = count ?? DEFAULT_OFFER_COUNT;
 
-    if (existedOffer) {
-      return existedOffer;
-    }
-    return this.create(dto);
-  }
-
-  public async find(): Promise<DocumentType<OfferEntity>[]> {
     return this.offerModel
       .find({})
-      .sort({ createdAt: SortType.Down })
-      .limit(DEFAULT_OFFER_COUNT)
       .populate('user')
-      .exec();
-  }
-
-  public async findPremium(): Promise<DocumentType<OfferEntity>[]> {
-    return this.offerModel
-      .find({ isPremium: true })
       .sort({ createdAt: SortType.Down })
-      .limit(DEFAULT_OFFER_COUNT)
-      .populate('user')
+      .limit(limit)
       .exec();
   }
 
   public async deleteById(offerId: string): Promise<DeleteResult> {
+    await this.commentModel.deleteMany({ offerId }).exec();
     return this.offerModel.deleteOne({ _id: offerId }).exec();
   }
 
@@ -88,9 +69,7 @@ export class DefaultOfferService implements IOfferService {
     dto: UpdateOfferDto
   ): Promise<DocumentType<OfferEntity> | null> {
     return this.offerModel
-      .findOneAndUpdate({ _id: offerId }, dto, {
-        new: true,
-      })
+      .findOneAndUpdate({ _id: offerId }, dto, { returnDocument: 'after' })
       .populate('user')
       .exec();
   }
@@ -99,7 +78,7 @@ export class DefaultOfferService implements IOfferService {
     city: string
   ): Promise<DocumentType<OfferEntity>[]> {
     return this.offerModel
-      .find({ city: city, isPremium: true })
+      .find({ city, isPremium: true })
       .sort({ createdAt: SortType.Down })
       .limit(DEFAULT_PREMIUM_OFFER_COUNT)
       .populate('user')
@@ -127,43 +106,14 @@ export class DefaultOfferService implements IOfferService {
       .exec();
 
     const avgRating = result.length > 0 ? result[0].avgRating : 0;
-    const rating = Math.round(avgRating * 10) / 10;
+    const rating =
+      Math.round(avgRating * RATING_FRACTION_MULTIPLIER) /
+      RATING_FRACTION_MULTIPLIER;
 
     await this.offerModel.findByIdAndUpdate(offerId, { rating });
   }
 
   public async exists(documentId: string): Promise<boolean> {
     return (await this.offerModel.exists({ _id: documentId })) !== null;
-  }
-
-  public async findFavorite(
-    userId: string
-  ): Promise<DocumentType<OfferEntity>[]> {
-    const offers = await this.offerModel
-      .find({ favoriteByUsers: userId })
-      .populate('user')
-      .exec();
-    return offers;
-  }
-
-  public async addToFavorite(offerId: string, userId: string): Promise<void> {
-    await this.offerModel
-      .updateOne({ _id: offerId }, { $addToSet: { favoriteByUsers: userId } })
-      .exec();
-    await this.userModel
-      .updateOne({ _id: userId }, { $addToSet: { favoriteOffers: offerId } })
-      .exec();
-  }
-
-  public async deleteFromFavorite(
-    offerId: string,
-    userId: string
-  ): Promise<void> {
-    await this.offerModel
-      .updateOne({ _id: offerId }, { $pull: { favoriteByUsers: userId } })
-      .exec();
-    await this.userModel
-      .updateOne({ _id: userId }, { $pull: { favoriteOffers: offerId } })
-      .exec();
   }
 }

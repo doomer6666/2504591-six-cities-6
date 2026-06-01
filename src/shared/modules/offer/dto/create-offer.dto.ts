@@ -57,7 +57,7 @@ export class CreateOfferDto {
 
   @IsInt({ message: CreateOfferValidationMessage.price.invalidFormat })
   @Min(100, { message: CreateOfferValidationMessage.price.minValue })
-  @Max(200000, { message: CreateOfferValidationMessage.price.maxValue })
+  @Max(100000, { message: CreateOfferValidationMessage.price.maxValue })
   public price: number;
 
   @IsArray({ message: CreateOfferValidationMessage.features.invalidFormat })

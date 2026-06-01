@@ -7,6 +7,7 @@ import {
 } from '../libs/rest/index.js';
 import { StatusCodes } from 'http-status-codes';
 import { ValidationError } from 'class-validator';
+import { OfferCityEnum, OfferCityType } from '../types/index.js';
 
 export const includes = <T>(array: readonly T[], value: unknown): boolean =>
   (array as readonly unknown[]).includes(value);
@@ -72,3 +73,6 @@ export function getFullServerPath(host: string, port: number) {
 
 export const isObject = (value: unknown): value is Record<string, object> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+export const isOfferCityType = (city: string): city is OfferCityType =>
+  includes(Object.values(OfferCityEnum), city);

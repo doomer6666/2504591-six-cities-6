@@ -23,7 +23,7 @@ export const CreateOfferValidationMessage = {
   price: {
     invalidFormat: 'Price must be an integer',
     minValue: 'Minimum price is 100',
-    maxValue: 'Maximum price is 200000',
+    maxValue: 'Maximum price is 100000',
   },
   features: {
     invalidFormat: 'Field features must be an array',

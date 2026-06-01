@@ -7,7 +7,7 @@ import {
   OfferFeatureEnum,
 } from '../types/index.js';
 import { ParsedLine } from '../types/parsed-line.type.js';
-import { includes } from './common.js';
+import { includes, isOfferCityType } from './common.js';
 
 const isCoordinatesValid = (
   coordinates: unknown
@@ -21,9 +21,6 @@ const isCoordinatesValid = (
 
 const isOfferType = (type: string): type is OfferType =>
   includes(Object.values(OfferTypeEnum), type);
-
-const isOfferCityType = (city: string): city is OfferCityType =>
-  includes(Object.values(OfferCityEnum), city);
 
 const isOfferFeatureType = (feature: string): feature is OfferFeatureType =>
   includes(Object.values(OfferFeatureEnum), feature);

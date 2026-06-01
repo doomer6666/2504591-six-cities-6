@@ -37,7 +37,7 @@ export class OfferEntity extends defaultClasses.TimeStamps implements Offer {
   @prop({
     required: true,
     default: '',
-    minlength: 20,
+    minlength: 5,
     maxlength: 1024,
     type: () => String,
   })

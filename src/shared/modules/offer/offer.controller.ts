@@ -16,7 +16,7 @@ import { Component } from '../../types/component.enum.js';
 import { ILogger } from '../../libs/logger/logger.interface.js';
 import { Response, Request } from 'express';
 import { CreateOfferDto, IOfferService, UpdateOfferDto } from './index.js';
-import { fillDTO, getId } from '../../helpers/common.js';
+import { fillDTO, getId, isOfferCityType } from '../../helpers/common.js';
 import { OfferRdo } from './rdo/offer.rdo.js';
 import { StatusCodes } from 'http-status-codes';
 import { CreateOfferRequest } from './requests/create-offer-request.type.js';
@@ -160,22 +160,34 @@ export class OfferController extends BaseController {
     });
   }
 
-  public async index({ tokenPayload }: Request, res: Response): Promise<void> {
-    const offers = await this.offerService.find();
+  public async index(
+    { tokenPayload, query }: Request,
+    res: Response
+  ): Promise<void> {
+    const count =
+      query.count && typeof query.count === 'string'
+        ? Number.parseInt(query.count, 10)
+        : undefined;
+
+    const limit =
+      count && !Number.isNaN(count) && count > 0 ? count : undefined;
+
+    const offers = await this.offerService.find(limit);
+
     let favoriteIds: string[] = [];
     if (tokenPayload) {
       favoriteIds = await this.userService.getFavoriteIds(tokenPayload.id);
     }
 
-    const offerWithFavotiresFlag = offers.map((offer) => {
+    const offersWithFavoritesFlag = offers.map((offer) => {
       const offerObject = offer.toObject({ virtuals: true });
       return {
         ...offerObject,
         isFavorite: favoriteIds.includes(offerObject._id.toString()),
       };
     });
-    const responseData = fillDTO(OfferRdo, offerWithFavotiresFlag);
-    this.ok(res, responseData);
+
+    this.ok(res, fillDTO(OfferRdo, offersWithFavoritesFlag));
   }
 
   public async create(
@@ -200,13 +212,22 @@ export class OfferController extends BaseController {
   }
 
   public async show(req: Request, res: Response): Promise<void> {
-    this.logger.info('req.params:', req.params);
-    this.logger.info('req.url:', req.url);
     const id = getId(req.params);
-
     const offer = await this.offerService.findByOfferId(id);
-    const responseData = fillDTO(OfferRdo, offer);
-    this.ok(res, responseData);
+
+    let isFavorite = false;
+    if (req.tokenPayload && offer) {
+      const favoriteIds = await this.userService.getFavoriteIds(
+        req.tokenPayload.id
+      );
+      isFavorite = favoriteIds.includes(offer._id.toString());
+    }
+
+    const offerObject = offer
+      ? { ...offer.toObject({ virtuals: true }), isFavorite }
+      : offer;
+
+    this.ok(res, fillDTO(OfferRdo, offerObject));
   }
 
   public async patch(req: PatchOfferRequest, res: Response): Promise<void> {
@@ -225,8 +246,26 @@ export class OfferController extends BaseController {
     this.ok(res, result);
   }
 
-  public async getPremium(_req: Request, res: Response): Promise<void> {
-    const offers = await this.offerService.findPremium();
+  public async getPremium(req: Request, res: Response): Promise<void> {
+    const city = req.query.city;
+
+    if (typeof city !== 'string') {
+      throw new HttpError(
+        StatusCodes.BAD_REQUEST,
+        'Query parameter "city" is required',
+        'OfferController'
+      );
+    }
+
+    if (!isOfferCityType(city)) {
+      throw new HttpError(
+        StatusCodes.BAD_REQUEST,
+        `Unknown city: ${city}`,
+        'OfferController'
+      );
+    }
+
+    const offers = await this.offerService.findPremiumByCity(city);
     const responseData = fillDTO(OfferRdo, offers);
     this.ok(res, responseData);
   }

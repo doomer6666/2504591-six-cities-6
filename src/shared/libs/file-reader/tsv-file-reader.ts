@@ -1,13 +1,10 @@
 import { createReadStream } from 'node:fs';
-import { IFileReader } from './file-reader.interface.js';
-import { createOffer } from '../../helpers/index.js';
 import { EventEmitter } from 'node:events';
-import { ParsedLine } from '../../types/parsed-line.type.js';
+import { IFileReader } from './file-reader.interface.js';
 
 const CHUNK_SIZE = 16384;
-export class TsvFileReader extends EventEmitter implements IFileReader {
-  private rawData = '';
 
+export class TsvFileReader extends EventEmitter implements IFileReader {
   constructor(private filePath: string) {
     super();
   }
@@ -27,24 +24,20 @@ export class TsvFileReader extends EventEmitter implements IFileReader {
 
       while ((nextLinePosition = remainingData.indexOf('\n')) >= 0) {
         const line = remainingData.slice(0, nextLinePosition + 1).trim();
-        remainingData = remainingData.slice(++nextLinePosition);
+        remainingData = remainingData.slice(nextLinePosition + 1);
+
+        if (line.length === 0) {
+          continue;
+        }
+
         importedRowCount++;
+
         await new Promise((resolve) => {
           this.emit('line', line, resolve);
         });
       }
-
-      this.emit('end', importedRowCount);
     }
-  }
 
-  public toArray(): ParsedLine[] {
-    if (!this.rawData) {
-      throw new Error('No data to parse. Please call read() method first.');
-    }
-    return this.rawData
-      .split('\n')
-      .filter((row) => row.trim().length > 0)
-      .map((line) => createOffer(line));
+    this.emit('end', importedRowCount);
   }
 }
